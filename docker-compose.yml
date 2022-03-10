@@ -1,0 +1,57 @@
+version: '3.1'
+
+services:
+  php:
+    build: .
+    container_name: php
+    volumes:
+      - ./:/var/www
+    ports:
+      - "3000:3000"
+    depends_on:
+      - database
+
+  nginx:
+    image: nginx:latest
+    container_name: b2b-nginx
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx:/etc/nginx/conf.d
+    links:
+      - php:php
+    ports:
+      - "81:80"
+      - "443:443"
+    depends_on:
+      - php
+
+  database:
+    container_name: db
+    image: postgres:13-alpine
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: 'test'
+      POSTGRES_DB: 'test'
+      POSTGRES_PASSWORD: 'test'
+    volumes:
+      - db-data:/var/lib/postgresql/data:rw
+
+  mailer:
+    container_name: mailer
+    image: schickling/mailcatcher
+    ports: [1025, 1080]
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3.8-management
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbit
+      RABBITMQ_DEFAULT_PASS: mq
+    ports:
+      - 5672:5672
+      - 15672:15672
+
+volumes:
+  db-data:
